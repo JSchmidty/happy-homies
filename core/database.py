@@ -540,6 +540,36 @@ class CrewMember(TimestampMixin, Base):
                            backref=backref("crew_member", uselist=False))
 
 
+class HomieModel(TimestampMixin, Base):
+    """A 'homie' — a visual AI agent persona (Happy Homies signature feature).
+
+    Each homie pairs a user-uploaded avatar + animated mouth overlay with a
+    structured persona (compiled into its system prompt by
+    src.homie_persona.compile_homie_prompt) and its own independent agent
+    session. tool_whitelist is stored now but unenforced beyond the user's
+    own privilege ceiling — phase 3 will scope homies to specific apps.
+    """
+    __tablename__ = "homie_companions"
+
+    id             = Column(String, primary_key=True, index=True)
+    owner          = Column(String, nullable=False, index=True)  # Core scope protection fence
+    name           = Column(String, nullable=False)
+    avatar_path    = Column(String, nullable=False)
+    mouth_preset   = Column(String, default="Line smile")
+    mouth_anchor   = Column(JSON, nullable=False)                # {x, y, scale, rotation} normalized to avatar box
+    mouth_color    = Column(String, nullable=True)               # Nullable hex override parameter
+    voice_config   = Column(JSON, nullable=False)                # {"engine": "kokoro"|"chatterbox", "voice": ..., "speed": ..., "pitch": ..., "ref_clip": ...}
+    persona        = Column(JSON, nullable=False)                # motivations/frustrations/goals/channels + 0-100 slider ints
+    tool_whitelist = Column(JSON, nullable=True)                 # Defaults to null = all tools (within owner privilege ceiling)
+    pinned         = Column(Boolean, default=False)
+    canvas_pos     = Column(JSON, default=lambda: {"x": 100, "y": 100})
+    enabled        = Column(Boolean, default=True)
+    session_id     = Column(String, ForeignKey("sessions.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    session = relationship("Session", foreign_keys=[session_id],
+                           backref=backref("homie", uselist=False))
+
+
 class ScheduledTask(TimestampMixin, Base):
     """A recurring or one-off task — LLM-powered or direct action, time or event triggered."""
     __tablename__ = "scheduled_tasks"
