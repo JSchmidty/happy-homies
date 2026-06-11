@@ -36612,3 +36612,388 @@ body.theme-frosted .modal {
    the input beside it (.confirm-btn won't stretch on its own). */
 .ask-user-other-send { flex-shrink: 0; white-space: nowrap; min-height: 39px; }
 .ask-user-other-send:disabled { opacity: 0.5; cursor: default; }
+/* ==========================================================================
+   Homies — dock page, maker/editor, canvas pins, chat bubbles, mouths.
+   Token-level only: every color rides the theme variables.
+   ========================================================================== */
+
+.homies-pane {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 160;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  width: min(880px, 92vw);
+  height: min(80vh, 820px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+  box-sizing: border-box;
+}
+.homies-pane-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--sidebar-bg, var(--panel));
+}
+.homies-pane-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--brand-color, var(--fg));
+}
+.homies-pane-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+}
+.homies-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+}
+.homies-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-muted);
+}
+.homies-empty-icon { opacity: 0.6; margin-bottom: 8px; }
+.homies-new-btn {
+  background: var(--send-btn-bg, var(--red));
+  color: #FCEFE8;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.homies-new-btn:hover { background: var(--send-btn-hover, var(--red)); }
+
+/* --- dock cards --- */
+.homie-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.homie-card.homie-disabled { opacity: 0.45; }
+.homie-card-row { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.homie-card-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.homie-card-actions { display: flex; gap: 4px; }
+.homie-act {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--color-muted);
+  padding: 4px 7px;
+  cursor: pointer;
+  line-height: 0;
+}
+.homie-act:hover { color: var(--fg); border-color: var(--accent-primary, var(--red)); }
+.homie-act.active { color: var(--accent-primary, var(--red)); border-color: var(--accent-primary, var(--red)); }
+.homie-act-danger:hover { color: var(--accent-error, var(--color-error)); border-color: var(--accent-error, var(--color-error)); }
+
+/* --- avatar box + mouth overlay --- */
+.homie-avatar-box {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--panel) 60%, var(--bg));
+  user-select: none;
+}
+.homie-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+.homie-avatar-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-muted);
+  letter-spacing: 0.05em;
+}
+.homie-mouth {
+  position: absolute;
+  pointer-events: none;
+  line-height: 0;
+}
+.homie-mouth svg { width: 100%; height: auto; display: block; }
+
+/* --- status dots --- */
+.homie-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-muted);
+}
+.homie-status-working {
+  background: var(--accent-warm, var(--warn));
+  animation: homie-dot-pulse 1.1s ease-in-out infinite;
+}
+.homie-status-speaking { background: var(--color-agent-active); }
+@keyframes homie-dot-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* --- editor overlay --- */
+.homie-editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.homie-editor {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  width: min(640px, 94vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+.homie-editor-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.homie-editor-header h4 { margin: 0; font-size: 13px; color: var(--fg); }
+.homie-editor-body { overflow-y: auto; padding: 14px; }
+.homie-ed-section { margin-bottom: 16px; }
+.homie-ed-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-subheader);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+.homie-ed-sub { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--color-muted); }
+.homie-ed-mini { text-transform: none; letter-spacing: 0; font-size: 11px; }
+.homie-editor input[type="text"],
+.homie-editor textarea,
+.homie-editor select,
+.homie-editor input[type="number"] {
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 12px;
+  padding: 7px 9px;
+}
+.homie-editor input[type="number"] { width: 72px; }
+.homie-editor textarea { resize: vertical; font-family: inherit; }
+.homie-ed-avatar-row { display: flex; gap: 16px; }
+.homie-ed-anchor-wrap { width: 220px; flex-shrink: 0; }
+.homie-ed-preview { width: 220px; cursor: crosshair; border: 1px dashed var(--border); }
+.homie-ed-hint { font-size: 10.5px; color: var(--color-muted); margin-top: 6px; }
+.homie-ed-avatar-controls { flex: 1; min-width: 0; }
+.homie-ed-mouth-presets { display: flex; gap: 8px; margin-bottom: 8px; }
+.homie-mouth-choice {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px;
+  width: 52px;
+  cursor: pointer;
+  color: var(--fg);
+}
+.homie-mouth-choice.active { border-color: var(--accent-primary, var(--red)); color: var(--accent-primary, var(--red)); }
+.homie-mouth-choice-svg { display: block; }
+.homie-mouth-choice-svg svg { width: 100%; height: auto; }
+.homie-ed-channels { display: flex; flex-wrap: wrap; gap: 10px; }
+.homie-ed-channel { font-size: 12px; color: var(--fg); display: inline-flex; align-items: center; gap: 5px; }
+.homie-ed-slider-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 90px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--color-muted);
+}
+.homie-ed-slider-row span:last-child { text-align: right; }
+.homie-ed-voice-row { display: flex; gap: 12px; align-items: center; }
+.homie-ed-voice-row select { width: auto; flex: 1; }
+.homie-ed-footer-row { display: flex; align-items: center; gap: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.homie-ed-error {
+  color: var(--accent-error, var(--color-error));
+  font-size: 12px;
+  padding: 8px 2px 0;
+}
+
+/* --- canvas pin layer --- */
+#homie-pin-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  pointer-events: none; /* never block the UI beneath… */
+}
+#homie-pin-layer .homie-pin,
+#homie-pin-layer .homie-bubble {
+  pointer-events: auto; /* …except on the homies themselves */
+}
+.homie-pin {
+  position: absolute;
+  width: 96px;
+  cursor: grab;
+  touch-action: none;
+}
+.homie-pin:active { cursor: grabbing; }
+.homie-pin .homie-avatar-box { background: transparent; border-radius: 0; overflow: visible; }
+.homie-pin .homie-avatar-img { filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.35)); }
+.homie-pin-dot { position: absolute; top: 2px; right: 2px; width: 10px; height: 10px; border: 2px solid var(--bg); }
+.homie-pin-name {
+  text-align: center;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fg);
+  text-shadow: 0 1px 3px var(--bg);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- chat bubble --- */
+.homie-bubble {
+  position: absolute;
+  width: min(300px, 78vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+  z-index: 145;
+}
+.homie-bubble-tail {
+  position: absolute;
+  bottom: -7px;
+  width: 12px;
+  height: 12px;
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) rotate(45deg);
+}
+.homie-bubble-flipped .homie-bubble-tail {
+  bottom: auto;
+  top: -7px;
+  border-right: none;
+  border-bottom: none;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+.homie-bubble-msg {
+  font-size: 12px;
+  color: var(--fg);
+  line-height: 1.45;
+  max-height: 150px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.homie-bubble-msg .homie-bubble-empty { color: var(--color-muted); }
+.homie-bubble-more { color: var(--color-accent); text-decoration: none; }
+.homie-bubble-expanded { max-height: 260px; }
+.homie-bubble-inputrow { display: flex; gap: 6px; }
+.homie-bubble-inputrow input {
+  flex: 1;
+  min-width: 0;
+  background: var(--input-bg, var(--bg));
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: 6px;
+  color: var(--fg);
+  font-size: 12px;
+  padding: 6px 8px;
+}
+.homie-bubble-inputrow button {
+  background: var(--send-btn-bg, var(--red));
+  color: #FCEFE8;
+  border: none;
+  border-radius: 6px;
+  padding: 0 10px;
+  cursor: pointer;
+  line-height: 0;
+}
+.homie-bubble-inputrow button:hover { background: var(--send-btn-hover, var(--red)); }
+.homie-typing { display: inline-flex; gap: 4px; align-items: center; height: 14px; }
+.homie-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  animation: homie-typing-bounce 1.2s ease-in-out infinite;
+}
+.homie-typing span:nth-child(2) { animation-delay: 0.15s; }
+.homie-typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes homie-typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* --- mobile: pins collapse into a bottom avatar strip; dock is primary --- */
+@media (max-width: 768px) {
+  #homie-pin-layer {
+    top: auto;
+    height: 76px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px;
+    overflow-x: auto;
+  }
+  .homie-pin {
+    position: static !important;
+    width: 56px !important;
+    flex-shrink: 0;
+  }
+  .homie-pin-name { display: none; }
+  .homie-bubble {
+    position: fixed;
+    left: 8px !important;
+    right: 8px;
+    bottom: 84px;
+    top: auto !important;
+    width: auto;
+  }
+  .homie-bubble-tail { display: none; }
+}
