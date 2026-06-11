@@ -89,8 +89,8 @@
      localStorage — renders the login page in the same palette as the rest
      of the app instead of a different greys+offwhite scheme. */
   :root {
-    --bg: #282c34; --fg: #9cdef2; --panel: #111; --border: #355a66;
-    --red: #e06c75; --green: #50fa7b;
+    --bg: #1A1420; --fg: #F4ECE4; --panel: #241B2B; --border: #3A2E42;
+    --red: #E8643C; --green: #50fa7b;
     --bg-effect-intensity: 1;
   }
   /* Background patterns — mirrors static/style.css "Background Patterns"
@@ -170,7 +170,7 @@
     padding: calc(0.7rem + 1px) 0.7rem calc(0.7rem - 1px);
     border: none; border-radius: 6px;
     /* Darken the brand red slightly so #fff label text clears the WCAG AA
-       4.5:1 contrast threshold (plain --red #e06c75 only reaches ~3.2:1). */
+       4.5:1 contrast threshold (plain --red #E8643C only reaches ~3.0:1). */
     background: color-mix(in srgb, var(--red) 78%, #000); color: #fff; font-size: 1rem; cursor: pointer;
     font-weight: 600; font-family: 'Fira Code', monospace;
   }
@@ -239,7 +239,7 @@
     display: inline-block;
     width: 16px; height: 16px;
     border: 2px solid color-mix(in srgb, var(--fg, #fff) 22%, transparent);
-    border-top-color: var(--accent, var(--red, #e8a830));
+    border-top-color: var(--accent, var(--red, #E8643C));
     border-radius: 50%;
     animation: login-spin 0.7s linear infinite;
     vertical-align: -3px;
