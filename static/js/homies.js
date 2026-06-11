@@ -453,16 +453,16 @@ function openEditor(homie) {
       </div>
 
       <div class="homie-ed-section">
-        <label class="homie-ed-label">Motivations <span class="homie-ed-sub">what drives this homie</span></label>
+        <label class="homie-ed-label">Motivations <span class="homie-ed-sub">what drives this homie</span><button type="button" class="homie-ed-suggest" data-suggest="motivations" title="Let the model suggest a few">✨ Suggest</button></label>
         <textarea id="homie-ed-motivations" rows="2" placeholder="one per line">${escapeHtml((h.persona.motivations || []).join('\n'))}</textarea>
-        <label class="homie-ed-label">Frustrations <span class="homie-ed-sub">what it pushes back on</span></label>
+        <label class="homie-ed-label">Frustrations <span class="homie-ed-sub">what it pushes back on</span><button type="button" class="homie-ed-suggest" data-suggest="frustrations" title="Let the model suggest a few">✨ Suggest</button></label>
         <textarea id="homie-ed-frustrations" rows="2" placeholder="one per line">${escapeHtml((h.persona.frustrations || []).join('\n'))}</textarea>
-        <label class="homie-ed-label">Goals <span class="homie-ed-sub">standing objectives, in priority order</span></label>
+        <label class="homie-ed-label">Goals <span class="homie-ed-sub">standing objectives, in priority order</span><button type="button" class="homie-ed-suggest" data-suggest="goals" title="Let the model suggest a few">✨ Suggest</button></label>
         <textarea id="homie-ed-goals" rows="3" placeholder="one per line, top = highest priority">${escapeHtml((h.persona.goals || []).join('\n'))}</textarea>
       </div>
 
       <div class="homie-ed-section">
-        <label class="homie-ed-label">Preferred channels <span class="homie-ed-sub">where it proactively writes output</span></label>
+        <label class="homie-ed-label">Preferred channels <span class="homie-ed-sub">where it proactively writes output</span><button type="button" class="homie-ed-suggest" id="homie-ed-rand-channels" title="Random channel mix">🎲 Randomize</button></label>
         <div class="homie-ed-channels">
           ${['Chat', 'Email', 'Notes', 'Tasks', 'Calendar'].map((c) => `
             <label class="homie-ed-channel"><input type="checkbox" data-channel="${c}" ${channels.has(c) ? 'checked' : ''}/> ${c}</label>`).join('')}
@@ -470,7 +470,7 @@ function openEditor(homie) {
       </div>
 
       <div class="homie-ed-section">
-        <label class="homie-ed-label">Decision-making</label>
+        <label class="homie-ed-label">Decision-making<button type="button" class="homie-ed-suggest" id="homie-ed-rand-sliders" title="Roll a random temperament">🎲 Randomize</button></label>
         ${[
           ['cautious_bold', 'Cautious', 'Bold'],
           ['ask_first_autonomous', 'Ask-first', 'Autonomous'],
@@ -485,7 +485,7 @@ function openEditor(homie) {
       </div>
 
       <div class="homie-ed-section">
-        <label class="homie-ed-label">Voice</label>
+        <label class="homie-ed-label">Voice<button type="button" class="homie-ed-suggest" id="homie-ed-rand-voice" title="Random speed + pitch">🎲 Randomize</button></label>
         <div class="homie-ed-voice-row">
           <select id="homie-ed-voice-engine">
             <option value="kokoro" ${h.voice_config.engine === 'kokoro' ? 'selected' : ''}>Kokoro (default)</option>
@@ -593,6 +593,58 @@ function openEditor(homie) {
     pendingAvatarFile = f;
     setPreviewImage(URL.createObjectURL(f));
     refreshPreviewMouth();
+  });
+
+  // --- suggest + randomize ---
+  ov.querySelectorAll('.homie-ed-suggest[data-suggest]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const field = btn.dataset.suggest;
+      const ta = ov.querySelector('#homie-ed-' + field);
+      const lines = (sel) => ov.querySelector(sel).value.split('\n').map((x) => x.trim()).filter(Boolean);
+      const orig = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '…thinking';
+      try {
+        const data = await api('/api/homies/persona-suggest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            field,
+            name: ov.querySelector('#homie-ed-name').value,
+            persona: {
+              motivations: lines('#homie-ed-motivations'),
+              frustrations: lines('#homie-ed-frustrations'),
+              goals: lines('#homie-ed-goals'),
+            },
+          }),
+        });
+        const existing = ta.value.trim();
+        ta.value = (existing ? existing + '\n' : '') + (data.suggestions || []).join('\n');
+      } catch (err) {
+        uiModule.showError?.(err.message || String(err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    });
+  });
+  const randInt = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1));
+  const randBtnSliders = ov.querySelector('#homie-ed-rand-sliders');
+  if (randBtnSliders) randBtnSliders.addEventListener('click', () => {
+    ov.querySelectorAll('[data-slider]').forEach((sl) => { sl.value = randInt(0, 100); });
+  });
+  const randBtnVoice = ov.querySelector('#homie-ed-rand-voice');
+  if (randBtnVoice) randBtnVoice.addEventListener('click', () => {
+    // Keep it audible: 0.70–1.50 in 0.05 steps.
+    ov.querySelector('#homie-ed-voice-speed').value = (randInt(14, 30) * 0.05).toFixed(2);
+    ov.querySelector('#homie-ed-voice-pitch').value = (randInt(14, 30) * 0.05).toFixed(2);
+  });
+  const randBtnChannels = ov.querySelector('#homie-ed-rand-channels');
+  if (randBtnChannels) randBtnChannels.addEventListener('click', () => {
+    const boxes = Array.from(ov.querySelectorAll('[data-channel]'));
+    boxes.forEach((c) => { c.checked = Math.random() < 0.5; });
+    // Never leave it empty — guarantee at least one channel.
+    if (!boxes.some((c) => c.checked)) boxes[randInt(0, boxes.length - 1)].checked = true;
   });
 
   // --- close/save ---

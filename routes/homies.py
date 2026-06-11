@@ -98,6 +98,15 @@ class HomieMessage(BaseModel):
     stream: bool = False
 
 
+PERSONA_SUGGEST_FIELDS = {"motivations", "frustrations", "goals"}
+
+
+class PersonaSuggest(BaseModel):
+    field: str
+    name: str = ""
+    persona: Optional[Dict[str, Any]] = None
+
+
 # ---------------------------------------------------------------------------
 # Validation helpers
 # ---------------------------------------------------------------------------
@@ -673,6 +682,78 @@ def setup_homies_routes(session_manager) -> APIRouter:
         if body.stream:
             return StreamingResponse(agent_runs.subscribe(session_id), media_type="text/event-stream")
         return {"session_id": session_id, "status": "working", "homie_id": homie_id}
+
+    # ------------------------------------------------------------------ #
+    # Persona suggestions — LLM-suggested motivations/frustrations/goals
+    # ------------------------------------------------------------------ #
+
+    @router.post("/persona-suggest")
+    async def persona_suggest(request: Request, body: PersonaSuggest):
+        owner = _owner(request)
+        _require_agent_privilege(request, owner)
+        field = (body.field or "").strip().lower()
+        if field not in PERSONA_SUGGEST_FIELDS:
+            raise HTTPException(status_code=422, detail=f"field must be one of {sorted(PERSONA_SUGGEST_FIELDS)}")
+        from src.endpoint_resolver import resolve_chat_fallback_candidates
+        candidates = resolve_chat_fallback_candidates(owner)
+        if not candidates:
+            raise HTTPException(status_code=503, detail="No model endpoint configured — add one in Settings")
+        persona = body.persona if isinstance(body.persona, dict) else {}
+        name = " ".join(str(body.name or "").split()) or "the homie"
+        existing = persona.get(field) or []
+        if isinstance(existing, str):
+            existing = [existing]
+        context_bits = []
+        for key in ("motivations", "frustrations", "goals"):
+            vals = persona.get(key) or []
+            if isinstance(vals, str):
+                vals = [vals]
+            if vals:
+                context_bits.append(f"{key}: " + "; ".join(str(v) for v in vals[:6]))
+        context = ("Existing persona — " + " | ".join(context_bits)) if context_bits else "The persona is otherwise blank."
+        descriptions = {
+            "motivations": "things that drive it — what it cares about and finds energizing",
+            "frustrations": "things it pushes back on — pet peeves and dealbreakers",
+            "goals": "standing objectives it pursues, ordered by priority",
+        }
+        messages = [
+            {"role": "system", "content": (
+                "You suggest persona traits for a user-created AI agent character. "
+                "Reply with exactly 3 suggestions, one per line. No numbering, no bullets, "
+                "no quotes, no commentary. Each suggestion is a short phrase under 12 words. "
+                "Do not repeat anything the persona already has."
+            )},
+            {"role": "user", "content": (
+                f"The agent is named {name}. {context}\n"
+                f"Suggest 3 new {field} ({descriptions[field]}) for {name}."
+            )},
+        ]
+        from src.llm_core import llm_call_async_with_fallback
+        try:
+            raw = await llm_call_async_with_fallback(candidates, messages, timeout=45)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning("persona-suggest LLM call failed: %s", e)
+            raise HTTPException(status_code=502, detail="Suggestion model unavailable — try again")
+        try:
+            from src.text_helpers import strip_think
+            raw = strip_think(raw or "", prose=True) or raw
+        except Exception:
+            pass
+        seen = {(" ".join(str(x).split())).lower() for x in existing}
+        suggestions = []
+        for line in (raw or "").splitlines():
+            line = " ".join(line.split()).strip().strip("-•*\"'").strip()
+            line = line.lstrip("0123456789.) ").strip()
+            if line and line.lower() not in seen and len(line) <= 120:
+                suggestions.append(line)
+                seen.add(line.lower())
+            if len(suggestions) >= 3:
+                break
+        if not suggestions:
+            raise HTTPException(status_code=502, detail="No usable suggestions returned — try again")
+        return {"field": field, "suggestions": suggestions}
 
     # ------------------------------------------------------------------ #
     # Status — drives the dock/canvas status dots

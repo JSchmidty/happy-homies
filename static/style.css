@@ -36804,6 +36804,20 @@ body.theme-frosted .modal {
   margin-bottom: 6px;
 }
 .homie-ed-sub { text-transform: none; letter-spacing: 0; font-weight: 400; color: var(--color-muted); }
+.homie-ed-suggest {
+  float: right;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--color-muted);
+  font-size: 10px;
+  padding: 2px 7px;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.homie-ed-suggest:hover { color: var(--accent-primary, var(--red)); border-color: var(--accent-primary, var(--red)); }
+.homie-ed-suggest:disabled { opacity: 0.55; cursor: wait; }
 .homie-ed-mini { text-transform: none; letter-spacing: 0; font-size: 11px; }
 .homie-editor input[type="text"],
 .homie-editor textarea,
