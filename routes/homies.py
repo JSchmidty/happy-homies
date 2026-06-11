@@ -377,6 +377,44 @@ def _whitelist_disabled_tools(tool_whitelist: Optional[List[str]]) -> set:
 # Router
 # ---------------------------------------------------------------------------
 
+def _resolve_owner_candidates(owner: str) -> List:
+    """All (url, model, headers) the owner can use: configured fallback chain,
+    then the default endpoint/model setting, then any enabled endpoint."""
+    from src.endpoint_resolver import resolve_chat_fallback_candidates, resolve_endpoint_by_id
+    candidates = list(resolve_chat_fallback_candidates(owner) or [])
+    try:
+        from src.settings import get_user_setting, load_settings
+        settings = load_settings()
+        ep_id = (get_user_setting("default_endpoint_id", owner or "", settings.get("default_endpoint_id", "")) or "").strip()
+        model = (get_user_setting("default_model", owner or "", settings.get("default_model", "")) or "").strip()
+        if ep_id:
+            r = resolve_endpoint_by_id(ep_id, model or None, owner=owner)
+            if r and r[1]:
+                candidates.insert(0, r)
+    except Exception:
+        logger.exception("homies: default endpoint resolution failed")
+    if not candidates:
+        from core.database import ModelEndpoint
+        from src.auth_helpers import owner_filter
+        db = SessionLocal()
+        try:
+            q = db.query(ModelEndpoint).filter(ModelEndpoint.is_enabled == True)  # noqa: E712
+            q = owner_filter(q, ModelEndpoint, owner or None)
+            for ep in q.all():
+                models = []
+                try:
+                    models = json.loads(ep.cached_models or "[]")
+                except (ValueError, TypeError):
+                    models = []
+                r = resolve_endpoint_by_id(ep.id, models[0] if models else None, owner=owner)
+                if r and r[1]:
+                    candidates.append(r)
+                    break
+        finally:
+            db.close()
+    return candidates
+
+
 def setup_homies_routes(session_manager) -> APIRouter:
     router = APIRouter(prefix="/api/homies", tags=["homies"])
 
@@ -583,9 +621,8 @@ def setup_homies_routes(session_manager) -> APIRouter:
             raise HTTPException(status_code=409, detail=f"{homie_name} is still working on the previous message")
 
         # Resolve the owner's model chain (homies have no model of their own —
-        # they ride the user's configured default + fallbacks).
-        from src.endpoint_resolver import resolve_chat_fallback_candidates
-        candidates = resolve_chat_fallback_candidates(owner)
+        # they ride the user's default endpoint + fallbacks).
+        candidates = _resolve_owner_candidates(owner)
         if not candidates:
             raise HTTPException(status_code=503, detail="No model endpoint configured — add one in Settings")
         endpoint_url, model, headers = candidates[0]
@@ -694,8 +731,7 @@ def setup_homies_routes(session_manager) -> APIRouter:
         field = (body.field or "").strip().lower()
         if field not in PERSONA_SUGGEST_FIELDS:
             raise HTTPException(status_code=422, detail=f"field must be one of {sorted(PERSONA_SUGGEST_FIELDS)}")
-        from src.endpoint_resolver import resolve_chat_fallback_candidates
-        candidates = resolve_chat_fallback_candidates(owner)
+        candidates = _resolve_owner_candidates(owner)
         if not candidates:
             raise HTTPException(status_code=503, detail="No model endpoint configured — add one in Settings")
         persona = body.persona if isinstance(body.persona, dict) else {}
