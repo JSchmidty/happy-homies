@@ -9,6 +9,25 @@ import { makeWindowDraggable } from './windowDrag.js';
 import { snapModalToZone } from './tileManager.js';
 
 export const THEMES = {
+  // Sunset brand themes (Happy Homies white-label defaults)
+  dusk:       { bg:'#1A1420', fg:'#F4ECE4', panel:'#241B2B', border:'#3A2E42', red:'#E8643C',
+                advanced: { sidebarBg: '#150F1A', brandColor: '#F2A03D',
+                            sectionAccent: '#F2A03D', userBubbleBg: '#2E2236',
+                            aiBubbleBg: '#241B2B', bubbleBorder: '#3A2E42',
+                            inputBg: '#241B2B', inputBorder: '#3A2E42',
+                            /* darkened ember: white icon/label needs ≥4.5:1 (raw #E8643C is 2.95:1) */
+                            sendBtnBg: '#B54E2F', sendBtnHover: '#C55533',
+                            toggleBg: '#3A2E42', toggleActive: '#E8643C',
+                            accentPrimary: '#E8643C', accentError: '#C94F6D' } },
+  'golden-hour': { bg:'#F7F3ED', fg:'#42342A', panel:'#FDFBF7', border:'#DDD2C2', red:'#C2602E',
+                advanced: { sidebarBg: '#EFE8DE', brandColor: '#A8511F',
+                            sectionAccent: '#A8511F', userBubbleBg: '#F1E9DD',
+                            aiBubbleBg: '#FDFBF7', bubbleBorder: '#DDD2C2',
+                            inputBg: '#FDFBF7', inputBorder: '#DDD2C2',
+                            /* darkened clay: white icon/label needs ≥4.5:1 (raw #C2602E is 3.73:1) */
+                            sendBtnBg: '#A55227', sendBtnHover: '#974B24',
+                            toggleBg: '#DDD2C2', toggleActive: '#C2602E',
+                            accentPrimary: '#C2602E', accentError: '#A84A52' } },
   dark:       { bg:'#282c34', fg:'#9cdef2', panel:'#111111', border:'#355a66', red:'#e06c75' },
   light:      { bg:'#f0ebe3', fg:'#5a5248', panel:'#faf6f0', border:'#d4cdc2', red:'#c47d5a' },
   midnight:   { bg:'#0d1117', fg:'#c9d1d9', panel:'#161b22', border:'#30363d', red:'#f85149' },
@@ -31,7 +50,7 @@ export const THEMES = {
   cute:       { bg:'#fff0f5', fg:'#d4608a', panel:'#fff8fa', border:'#f0c0d0', red:'#ff6b9d' },
 };
 
-const DEFAULT_THEME = 'dark';
+const DEFAULT_THEME = 'dusk';
 const LS_KEY = 'odysseus-theme';
 const CUSTOM_THEMES_KEY = 'odysseus-custom-themes';
 
@@ -630,7 +649,7 @@ export function initThemeUI() {
         <span style="background:${c.fg}"></span>
         <span style="background:${c.red}"></span>
       </div>
-      ${name === 'dark' ? 'original' : (name === 'gpt' ? 'GPT' : name)}
+      ${name === 'dark' ? 'classic' : (name === 'gpt' ? 'GPT' : (name === 'golden-hour' ? 'golden hour' : name))}
     </div>
   `).join('');
 
